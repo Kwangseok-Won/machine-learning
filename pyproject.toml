@@ -1,0 +1,50 @@
+[project]
+name = "machine-learning"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+  "ipykernel>=7.3.0",
+  "jupyterlab>=4.6.4",
+  "keras>=3.15.1",
+  "matplotlib>=3.11.2",
+  "numpy>=2.5.4",
+  "opencv-contrib-python>=5.0.0.93",
+  "perfplot>=0.10.2",
+  "pillow>=12.3.0",
+  "tensorflow>=2.22.0rc0",
+  "torch>=2.14.1",
+]
+
+[project.scripts]
+machine-learning = "machine_learning:main"
+
+[dependency-groups]
+dev = [
+  "ruff>=0.16.6",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.ruff.lint]
+# E: Pycodestyle errors
+# F: Pyflakes
+# I: isort (Import sorting)
+# B: Flake8-bugbear (Potential bugs)
+# UP: Pyupgrade (Upgrade syntax to newer Python versions)
+# N: Pep8-naming
+# RUF: ruff specific rules
+# SIM: simplify
+# PERF: performance
+extend-select = ["E", "F", "I", "B", "UP", "N", "RUF", "SIM", "PERF"]
+
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu132" }
