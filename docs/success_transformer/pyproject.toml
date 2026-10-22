@@ -1,0 +1,30 @@
+[project]
+name = "transformer-master"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Haeri", email = "iamheddi41@gmail.com" }
+]
+requires-python = ">=3.9"
+dependencies = [
+    "de-core-news-sm",
+    "en-core-web-sm",
+    "matplotlib>=3.9.4",
+    "numpy<2",
+    "setuptools<70",
+    "spacy<3.8",
+    "torch==1.10.2",
+    "torchtext==0.11.2",
+]
+
+[project.scripts]
+transformer-master = "transformer_master:main"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+de-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.7.0/de_core_news_sm-3.7.0-py3-none-any.whl" }
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl" }
