@@ -1,0 +1,325 @@
+This run shows the scheduler fix worked: the logged learning rates decrease smoothly after warmup, with no rebound. The schedule advances once per epoch, which is the right cadence for an epoch-based `T_max`; the LR values you log before training are the values used during that epoch. [ch4.9-learning-rate-schedulers.qmd](https://github.com/jshn9515/deep-learning-notes/blob/main/en/ch4-optimization-algorithms/ch4.9-learning-rate-schedulers.qmd)
+
+  * __Warmup__: the FC LR rises from `1e-4` to `5.5e-4` to `1e-3` over epochs 1–3. The `layer4` LR is one tenth of the FC LR, as configured.
+  * __Cosine decay__: after epoch 3, the rates decline monotonically. Epoch 29 uses `1.25e-5` for the FC head. Because training stopped before epoch 30, this run didn’t execute the final scheduled epoch; that’s expected with early stopping.
+  * __Checkpoint and stopping__: the best validation accuracy is `0.8804` at epoch 23. Epochs 24–29 did not beat it, so patience 6 correctly stops at epoch 29. Since the loop restores the best checkpoint, the final reported `0.8804` is the epoch-23 model’s score—not the epoch-29 model’s score.
+  * __Interpret the losses carefully__: training loss is measured on Mixup examples with label smoothing, while validation loss uses ordinary hard labels. They are different objectives, so their values aren’t directly comparable. The training accuracy is measured on the unaugmented training set; reaching 1.0 indicates the small training set is being memorized, though validation accuracy continued improving afterward.
+  * __Name the evaluation accurately__: `plot_class_diagnostics(model, val_data, ...)` evaluates the labeled validation set, not the 6,149-image unlabeled test set. Consider changing `Evaluation accuracy` to `Validation accuracy`; `0.8804` is not a measured test accuracy.
+
+Overall, this is a strong validation result, and early stopping selected the correct checkpoint. I’d preserve that checkpoint and avoid tuning further based on the same validation set alone; repeated changes guided by it can make the reported validation score increasingly optimistic.
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  train loss 0.2973  train acc 0.0647  val loss 4.4736  val acc 0.0549  lr_layer4=1.00e-05  lr_fc=1.00e-04
+epoch  2  train loss 0.2445  train acc 0.6373  val loss 2.3385  val acc 0.4873  lr_layer4=5.50e-05  lr_fc=5.50e-04
+epoch  3  train loss 0.1685  train acc 0.8392  val loss 1.5134  val acc 0.6441  lr_layer4=1.00e-04  lr_fc=1.00e-03
+epoch  4  train loss 0.1208  train acc 0.9431  val loss 1.1271  val acc 0.7324  lr_layer4=9.97e-05  lr_fc=9.97e-04
+epoch  5  train loss 0.1261  train acc 0.9520  val loss 1.1615  val acc 0.7353  lr_layer4=9.87e-05  lr_fc=9.87e-04
+epoch  6  train loss 0.1132  train acc 0.9892  val loss 1.1605  val acc 0.7618  lr_layer4=9.72e-05  lr_fc=9.72e-04
+epoch  7  train loss 0.1020  train acc 0.9941  val loss 1.1838  val acc 0.7971  lr_layer4=9.50e-05  lr_fc=9.50e-04
+epoch  8  train loss 0.0931  train acc 0.9990  val loss 0.9790  val acc 0.8324  lr_layer4=9.23e-05  lr_fc=9.23e-04
+epoch  9  train loss 0.0987  train acc 0.9990  val loss 1.0401  val acc 0.8333  lr_layer4=8.91e-05  lr_fc=8.91e-04
+epoch 10  train loss 0.0917  train acc 1.0000  val loss 1.1698  val acc 0.7912  lr_layer4=8.54e-05  lr_fc=8.54e-04
+epoch 11  train loss 0.0990  train acc 0.9990  val loss 1.1735  val acc 0.8186  lr_layer4=8.12e-05  lr_fc=8.12e-04
+epoch 12  train loss 0.0994  train acc 0.9990  val loss 1.1828  val acc 0.8000  lr_layer4=7.66e-05  lr_fc=7.66e-04
+epoch 13  train loss 0.0879  train acc 1.0000  val loss 1.1123  val acc 0.8412  lr_layer4=7.17e-05  lr_fc=7.17e-04
+epoch 14  train loss 0.0956  train acc 1.0000  val loss 1.1914  val acc 0.8333  lr_layer4=6.65e-05  lr_fc=6.65e-04
+epoch 15  train loss 0.0868  train acc 1.0000  val loss 1.0453  val acc 0.8382  lr_layer4=6.11e-05  lr_fc=6.11e-04
+epoch 16  train loss 0.0932  train acc 1.0000  val loss 1.1312  val acc 0.8510  lr_layer4=5.56e-05  lr_fc=5.56e-04
+epoch 17  train loss 0.0873  train acc 1.0000  val loss 1.0701  val acc 0.8529  lr_layer4=5.00e-05  lr_fc=5.00e-04
+epoch 18  train loss 0.0817  train acc 1.0000  val loss 1.0853  val acc 0.8637  lr_layer4=4.44e-05  lr_fc=4.44e-04
+epoch 19  train loss 0.0865  train acc 1.0000  val loss 1.1685  val acc 0.8490  lr_layer4=3.89e-05  lr_fc=3.89e-04
+epoch 20  train loss 0.0922  train acc 1.0000  val loss 1.1253  val acc 0.8598  lr_layer4=3.35e-05  lr_fc=3.35e-04
+epoch 21  train loss 0.0816  train acc 1.0000  val loss 1.1850  val acc 0.8676  lr_layer4=2.83e-05  lr_fc=2.83e-04
+epoch 22  train loss 0.0756  train acc 1.0000  val loss 1.1228  val acc 0.8627  lr_layer4=2.34e-05  lr_fc=2.34e-04
+epoch 23  train loss 0.0822  train acc 1.0000  val loss 1.1092  val acc 0.8804  lr_layer4=1.88e-05  lr_fc=1.88e-04
+epoch 24  train loss 0.0847  train acc 1.0000  val loss 1.1517  val acc 0.8686  lr_layer4=1.46e-05  lr_fc=1.46e-04
+epoch 25  train loss 0.0832  train acc 1.0000  val loss 1.1455  val acc 0.8637  lr_layer4=1.09e-05  lr_fc=1.09e-04
+epoch 26  train loss 0.0876  train acc 1.0000  val loss 1.1366  val acc 0.8745  lr_layer4=7.66e-06  lr_fc=7.66e-05
+epoch 27  train loss 0.0817  train acc 1.0000  val loss 1.1390  val acc 0.8725  lr_layer4=4.95e-06  lr_fc=4.95e-05
+epoch 28  train loss 0.0845  train acc 1.0000  val loss 1.1345  val acc 0.8745  lr_layer4=2.81e-06  lr_fc=2.81e-05
+epoch 29  train loss 0.0857  train acc 1.0000  val loss 1.1325  val acc 0.8745  lr_layer4=1.25e-06  lr_fc=1.25e-05
+조기 종료: epoch 29
+최종 검증 정확도 0.8804
+Evaluation accuracy: 0.8804
+Per-class accuracy: mean=0.8804, min=0.4000, max=1.0000
+Lowest-accuracy class indices: [3, 10, 52, 25, 31, 89, 81, 29, 43, 30]
+
+###
+
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  train loss 0.2973  train acc 0.0647  val loss 4.4736  val acc 0.0549  lr_layer4=5.50e-05  lr_fc=5.50e-04
+epoch  2  train loss 0.2300  train acc 0.7275  val loss 1.9448  val acc 0.5608  lr_layer4=9.97e-05  lr_fc=9.97e-04
+epoch  3  train loss 0.1503  train acc 0.8912  val loss 1.3370  val acc 0.6824  lr_layer4=9.72e-05  lr_fc=9.72e-04
+epoch  4  train loss 0.1142  train acc 0.9637  val loss 1.0561  val acc 0.7451  lr_layer4=9.23e-05  lr_fc=9.23e-04
+epoch  5  train loss 0.1213  train acc 0.9706  val loss 1.1487  val acc 0.7578  lr_layer4=8.54e-05  lr_fc=8.54e-04
+epoch  6  train loss 0.1100  train acc 0.9951  val loss 1.0797  val acc 0.7735  lr_layer4=7.66e-05  lr_fc=7.66e-04
+epoch  7  train loss 0.0984  train acc 0.9961  val loss 1.1756  val acc 0.8147  lr_layer4=6.65e-05  lr_fc=6.65e-04
+epoch  8  train loss 0.0897  train acc 0.9990  val loss 1.0130  val acc 0.8333  lr_layer4=5.56e-05  lr_fc=5.56e-04
+epoch  9  train loss 0.0940  train acc 1.0000  val loss 0.9841  val acc 0.8343  lr_layer4=4.44e-05  lr_fc=4.44e-04
+epoch 10  train loss 0.0877  train acc 1.0000  val loss 1.0902  val acc 0.8471  lr_layer4=3.35e-05  lr_fc=3.35e-04
+epoch 11  train loss 0.0941  train acc 1.0000  val loss 1.1216  val acc 0.8510  lr_layer4=2.34e-05  lr_fc=2.34e-04
+epoch 12  train loss 0.0948  train acc 1.0000  val loss 1.1249  val acc 0.8588  lr_layer4=1.46e-05  lr_fc=1.46e-04
+epoch 13  train loss 0.0834  train acc 1.0000  val loss 1.0687  val acc 0.8598  lr_layer4=7.66e-06  lr_fc=7.66e-05
+epoch 14  train loss 0.0914  train acc 1.0000  val loss 1.0809  val acc 0.8608  lr_layer4=2.81e-06  lr_fc=2.81e-05
+epoch 15  train loss 0.0833  train acc 1.0000  val loss 1.0728  val acc 0.8588  lr_layer4=3.14e-07  lr_fc=3.14e-06
+epoch 16  train loss 0.0913  train acc 1.0000  val loss 1.0728  val acc 0.8588  lr_layer4=3.14e-07  lr_fc=3.14e-06
+epoch 17  train loss 0.0855  train acc 1.0000  val loss 1.0899  val acc 0.8598  lr_layer4=2.81e-06  lr_fc=2.81e-05
+epoch 18  train loss 0.0810  train acc 1.0000  val loss 1.0572  val acc 0.8657  lr_layer4=7.66e-06  lr_fc=7.66e-05
+epoch 19  train loss 0.0867  train acc 1.0000  val loss 1.1263  val acc 0.8618  lr_layer4=1.46e-05  lr_fc=1.46e-04
+epoch 20  train loss 0.0928  train acc 1.0000  val loss 1.0633  val acc 0.8627  lr_layer4=2.34e-05  lr_fc=2.34e-04
+epoch 21  train loss 0.0827  train acc 1.0000  val loss 1.1589  val acc 0.8618  lr_layer4=3.35e-05  lr_fc=3.35e-04
+epoch 22  train loss 0.0780  train acc 1.0000  val loss 1.1740  val acc 0.8480  lr_layer4=4.44e-05  lr_fc=4.44e-04
+epoch 23  train loss 0.0854  train acc 1.0000  val loss 1.0780  val acc 0.8500  lr_layer4=5.56e-05  lr_fc=5.56e-04
+epoch 24  train loss 0.0893  train acc 1.0000  val loss 1.2322  val acc 0.8245  lr_layer4=6.65e-05  lr_fc=6.65e-04
+조기 종료: epoch 24
+최종 검증 정확도 0.8657
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 손실 4.4736  검증 정확도 0.0549  lr_layer4=5.50e-05  lr_fc=5.50e-04
+epoch  2  검증 손실 2.3385  검증 정확도 0.4873  lr_layer4=1.00e-04  lr_fc=1.00e-03
+epoch  3  검증 손실 1.5134  검증 정확도 0.6441  lr_layer4=9.97e-05  lr_fc=9.97e-04
+epoch  4  검증 손실 1.1271  검증 정확도 0.7324  lr_layer4=9.87e-05  lr_fc=9.87e-04
+epoch  5  검증 손실 1.1615  검증 정확도 0.7353  lr_layer4=9.72e-05  lr_fc=9.72e-04
+epoch  6  검증 손실 1.1605  검증 정확도 0.7618  lr_layer4=9.50e-05  lr_fc=9.50e-04
+epoch  7  검증 손실 1.1838  검증 정확도 0.7971  lr_layer4=9.23e-05  lr_fc=9.23e-04
+epoch  8  검증 손실 0.9790  검증 정확도 0.8324  lr_layer4=8.91e-05  lr_fc=8.91e-04
+epoch  9  검증 손실 1.0401  검증 정확도 0.8333  lr_layer4=8.54e-05  lr_fc=8.54e-04
+epoch 10  검증 손실 1.1698  검증 정확도 0.7912  lr_layer4=8.12e-05  lr_fc=8.12e-04
+epoch 11  검증 손실 1.1735  검증 정확도 0.8186  lr_layer4=7.66e-05  lr_fc=7.66e-04
+epoch 12  검증 손실 1.1828  검증 정확도 0.8000  lr_layer4=7.17e-05  lr_fc=7.17e-04
+epoch 13  검증 손실 1.1123  검증 정확도 0.8412  lr_layer4=6.65e-05  lr_fc=6.65e-04
+epoch 14  검증 손실 1.1914  검증 정확도 0.8333  lr_layer4=6.11e-05  lr_fc=6.11e-04
+epoch 15  검증 손실 1.0453  검증 정확도 0.8382  lr_layer4=5.56e-05  lr_fc=5.56e-04
+epoch 16  검증 손실 1.1312  검증 정확도 0.8510  lr_layer4=5.00e-05  lr_fc=5.00e-04
+epoch 17  검증 손실 1.0701  검증 정확도 0.8529  lr_layer4=4.44e-05  lr_fc=4.44e-04
+epoch 18  검증 손실 1.0853  검증 정확도 0.8637  lr_layer4=3.89e-05  lr_fc=3.89e-04
+epoch 19  검증 손실 1.1685  검증 정확도 0.8490  lr_layer4=3.35e-05  lr_fc=3.35e-04
+epoch 20  검증 손실 1.1253  검증 정확도 0.8598  lr_layer4=2.83e-05  lr_fc=2.83e-04
+epoch 21  검증 손실 1.1850  검증 정확도 0.8676  lr_layer4=2.34e-05  lr_fc=2.34e-04
+epoch 22  검증 손실 1.1228  검증 정확도 0.8627  lr_layer4=1.88e-05  lr_fc=1.88e-04
+epoch 23  검증 손실 1.1092  검증 정확도 0.8804  lr_layer4=1.46e-05  lr_fc=1.46e-04
+epoch 24  검증 손실 1.1517  검증 정확도 0.8686  lr_layer4=1.09e-05  lr_fc=1.09e-04
+epoch 25  검증 손실 1.1455  검증 정확도 0.8637  lr_layer4=7.66e-06  lr_fc=7.66e-05
+epoch 26  검증 손실 1.1366  검증 정확도 0.8745  lr_layer4=4.95e-06  lr_fc=4.95e-05
+epoch 27  검증 손실 1.1390  검증 정확도 0.8725  lr_layer4=2.81e-06  lr_fc=2.81e-05
+epoch 28  검증 손실 1.1345  검증 정확도 0.8745  lr_layer4=1.25e-06  lr_fc=1.25e-05
+epoch 29  검증 손실 1.1325  검증 정확도 0.8745  lr_layer4=3.14e-07  lr_fc=3.14e-06
+epoch 30  검증 손실 1.1354  검증 정확도 0.8755  lr_layer4=0.00e+00  lr_fc=0.00e+00
+최종 검증 정확도 0.8804  @val_acc=0.8804
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 손실 4.4289  검증 정확도 0.0647  lr_layer4=5.50e-05  lr_fc=5.50e-04
+epoch  2  검증 손실 2.0073  검증 정확도 0.5382  lr_layer4=1.00e-04  lr_fc=1.00e-03
+epoch  3  검증 손실 1.3664  검증 정확도 0.6784  lr_layer4=9.97e-05  lr_fc=9.97e-04
+epoch  4  검증 손실 1.1480  검증 정확도 0.7333  lr_layer4=9.87e-05  lr_fc=9.87e-04
+epoch  5  검증 손실 1.1259  검증 정확도 0.7333  lr_layer4=9.72e-05  lr_fc=9.72e-04
+epoch  6  검증 손실 1.1234  검증 정확도 0.7647  lr_layer4=9.50e-05  lr_fc=9.50e-04
+epoch  7  검증 손실 1.0634  검증 정확도 0.8176  lr_layer4=9.23e-05  lr_fc=9.23e-04
+epoch  8  검증 손실 1.0532  검증 정확도 0.8275  lr_layer4=8.91e-05  lr_fc=8.91e-04
+epoch  9  검증 손실 1.0375  검증 정확도 0.8245  lr_layer4=8.54e-05  lr_fc=8.54e-04
+epoch 10  검증 손실 1.0347  검증 정확도 0.8314  lr_layer4=8.12e-05  lr_fc=8.12e-04
+epoch 11  검증 손실 1.1429  검증 정확도 0.8108  lr_layer4=7.66e-05  lr_fc=7.66e-04
+epoch 12  검증 손실 1.1218  검증 정확도 0.8284  lr_layer4=7.17e-05  lr_fc=7.17e-04
+epoch 13  검증 손실 1.0609  검증 정확도 0.8431  lr_layer4=6.65e-05  lr_fc=6.65e-04
+epoch 14  검증 손실 1.0599  검증 정확도 0.8588  lr_layer4=6.11e-05  lr_fc=6.11e-04
+조기 종료: epoch 14
+최종 검증 정확도 0.8314  @val_acc=0.8314  # Learning Rate Scheduling, Warmup and Batch Normalization (+ Gradient Clipping)
+
+###
+
+BATCH = 16
+EPOCHS = 30
+
+조기 종료: epoch 11
+최종 검증 정확도 0.8108  @val_acc=0.8108
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.0510
+epoch  2  검증 0.4196
+epoch  3  검증 0.6167
+epoch  4  검증 0.7235
+epoch  5  검증 0.7353
+epoch  6  검증 0.7971
+epoch  7  검증 0.8049
+epoch  8  검증 0.8235
+epoch  9  검증 0.8275
+epoch 10  검증 0.8020
+최종 검증 정확도 0.8020  @val_acc=0.8020
+
+$ uv run python grade.py submission.csv
+제출 파일: submission.csv  (답한 사진 6149/6149장)
+정답률      0.7694  (4731/6149)  ← 답한 사진 기준
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.0490
+epoch  2  검증 0.4167
+epoch  3  검증 0.6235
+epoch  4  검증 0.7206
+epoch  5  검증 0.7402
+epoch  6  검증 0.8010
+epoch  7  검증 0.8000
+epoch  8  검증 0.8196
+epoch  9  검증 0.8167
+epoch 10  검증 0.7990
+최종 검증 정확도 0.7990  @val_acc=0.7990  # AdamW weight_decay=1e-4  # np.random.seed(SEED)  # separate runs use reproducible Mixup randomness
+
+$ uv run python grade.py submission.csv
+제출 파일: submission.csv  (답한 사진 6149/6149장)
+정답률      0.7699  (4734/6149)  ← 답한 사진 기준
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.0520
+epoch  2  검증 0.4186
+epoch  3  검증 0.6176
+epoch  4  검증 0.7206
+epoch  5  검증 0.7392
+epoch  6  검증 0.7961
+epoch  7  검증 0.8000
+epoch  8  검증 0.8216
+epoch  9  검증 0.8265
+epoch 10  검증 0.8049
+최종 검증 정확도 0.8049  @val_acc=0.8049  # AdamW weight_decay=.0  # np.random.seed(SEED)  # separate runs use reproducible Mixup randomness
+
+$ uv run python grade.py submission.csv
+제출 파일: submission.csv  (답한 사진 6149/6149장)
+정답률      0.7712  (4742/6149)  ← 답한 사진 기준
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.0922
+epoch  2  검증 0.5029
+epoch  3  검증 0.6294
+epoch  4  검증 0.7539
+epoch  5  검증 0.7863
+epoch  6  검증 0.8078
+epoch  7  검증 0.8039
+epoch  8  검증 0.8010
+epoch  9  검증 0.8275
+epoch 10  검증 0.8216
+최종 검증 정확도 0.8216  @val_acc=0.8216  # AdamW weight_decay=1e-3
+
+$ uv run python grade.py submission.csv
+제출 파일: submission.csv  (답한 사진 6149/6149장)
+정답률      0.7933  (4878/6149)  ← 답한 사진 기준
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.1020
+epoch  2  검증 0.4931
+epoch  3  검증 0.6422
+epoch  4  검증 0.7343
+epoch  5  검증 0.7961
+epoch  6  검증 0.7794
+epoch  7  검증 0.8245
+epoch  8  검증 0.8304
+epoch  9  검증 0.8118
+epoch 10  검증 0.8235
+최종 검증 정확도 0.8235  @val_acc=0.8235  # AdamW weight_decay=1e-3
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.0598
+epoch  2  검증 0.4500
+epoch  3  검증 0.6275
+epoch  4  검증 0.7324
+epoch  5  검증 0.7608
+epoch  6  검증 0.8039
+epoch  7  검증 0.7912
+epoch  8  검증 0.7990
+epoch  9  검증 0.8069
+epoch 10  검증 0.7951
+최종 검증 정확도 0.7951  @val_acc=0.7951  # AdamW weight_decay=1e-4
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.0647
+epoch  2  검증 0.4627
+epoch  3  검증 0.5961
+epoch  4  검증 0.7196
+epoch  5  검증 0.7696
+epoch  6  검증 0.7706
+epoch  7  검증 0.7961
+epoch  8  검증 0.7961
+epoch  9  검증 0.8078
+epoch 10  검증 0.8284
+최종 검증 정확도 0.8284  @val_acc=0.8284  # Label smoothing, Mixup
+
+###
+
+$ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.2059
+epoch  2  검증 0.5794
+epoch  3  검증 0.6235
+epoch  4  검증 0.7216
+epoch  5  검증 0.7696
+epoch  6  검증 0.7951
+epoch  7  검증 0.7804
+epoch  8  검증 0.7863
+epoch  9  검증 0.8196
+epoch 10  검증 0.8216
+최종 검증 정확도 0.8216  @val_acc=0.8216  # Fine-tune과 LR 조정
+
+###
+
+(main) $ uv run python baseline.py
+장치: cuda
+epoch  1  검증 0.2578
+epoch  2  검증 0.5304
+epoch  3  검증 0.6500
+epoch  4  검증 0.6951
+epoch  5  검증 0.7304
+epoch  6  검증 0.7441
+epoch  7  검증 0.7667
+epoch  8  검증 0.7716
+epoch  9  검증 0.7765
+epoch 10  검증 0.7853
+최종 검증 정확도 0.7853  @val_acc=0.7853  # 증강
+
+        # frozen backbone: model.train() puts ResNet’s BatchNorm layers into training mode, so their running statistics change even though their parameters are frozen. With a small dataset, keep the backbone in eval mode while training the new classifier head.
+        # model.train()
+        model.eval()  # Keep the frozen ResNet and its BatchNorm statistics fixed
+        model.fc.train()  # Train the new classification head
+
+
+
+#####
+
+$ uv run baseline.py
+Installed 13 packages in 3.72s
+장치: cpu                                                                                           epoch  1  검증 0.2755                                                                               epoch  2  검증 0.5618
+epoch  3  검증 0.6569
+epoch  4  검증 0.7216
+epoch  5  검증 0.7382
+epoch  6  검증 0.7490
+epoch  7  검증 0.7725
+epoch  8  검증 0.7765
+epoch  9  검증 0.7794
+epoch 10  검증 0.7794
+최종 검증 정확도 0.7794  @val_acc=0.7794  # 최초
