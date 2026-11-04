@@ -13,7 +13,7 @@ y_np = 판매량
 손_w, 손_b = (2 * 오차 * x_np).mean(), (2 * 오차).mean()
 
 # PyTorch에게 맡긴 기울기
-x = torch.from_numpy(x_np)                   # float64 그대로 (4.1절)
+x = torch.from_numpy(x_np)  # float64 그대로 (4.1절)
 y = torch.from_numpy(y_np)
 w = torch.tensor(0.0, dtype=torch.float64, requires_grad=True)
 b = torch.tensor(0.0, dtype=torch.float64, requires_grad=True)
@@ -22,5 +22,8 @@ b = torch.tensor(0.0, dtype=torch.float64, requires_grad=True)
 
 print(f"손으로  : w 기울기 {손_w:.10f}, b 기울기 {손_b:.10f}")
 print(f"PyTorch : w 기울기 {w.grad.item():.10f}, b 기울기 {b.grad.item():.10f}")
-print("같은가?", torch.allclose(w.grad, torch.tensor(손_w, dtype=torch.float64)),
-      torch.allclose(b.grad, torch.tensor(손_b, dtype=torch.float64)))
+print(
+    "같은가?",
+    torch.allclose(w.grad, torch.tensor(손_w, dtype=torch.float64)),
+    torch.allclose(b.grad, torch.tensor(손_b, dtype=torch.float64)),
+)
